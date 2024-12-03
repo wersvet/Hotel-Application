@@ -1,0 +1,168 @@
+/* styles.css */
+.tab-pane {
+    -fx-background-color: transparent;
+}
+
+.tab {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+    -fx-background-radius: 10;
+    -fx-padding: 10;
+    -fx-font-size: 16px;
+}
+
+.table-view {
+    /*-fx-background-color: transparent; !* Прозрачный фон для таблицы *!*/
+    -fx-background-radius: 10;
+    -fx-padding: 10;
+    -fx-font-size: 14px;
+    -fx-text-fill: white; /* Белый цвет текста для таблицы */
+    -fx-background-color: rgba(255, 255, 255, 0.1); /* Полупрозрачный фон таблицы */
+    -fx-border-color: transparent;
+}
+
+
+.table-view .column-header-background {
+    /*-fx-background-color: black; !* Черный цвет для заголовков колонок *!*/
+    -fx-background-color: linear-gradient(to bottom, #ff8c00, #ff4500); /* Градиент для заголовков */
+    -fx-background-radius: 5;
+}
+
+.table-column-header {
+    -fx-text-fill: #000000; /* Черный цвет текста для заголовков #000000*/
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.root {
+    -fx-background-image: url("hot3pic.jpg");
+    -fx-background-size: cover;
+    -fx-background-position: center;
+    -fx-background-repeat: no-repeat;
+    -fx-background-color: #1e1e2e;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0.5, 0, 0);
+}
+
+/* Ячейки таблицы */
+.table-row-cell {
+    -fx-background-color: transparent;
+    -fx-border-width: 0 0 1 0; /* Нижняя граница */
+    -fx-border-color: rgba(0, 0, 0, 0.1); /* Полупрозрачная граница */
+    /* -fx-text-fill: #101010; /* Более темный текст */
+    -fx-font-size: 13px;
+    -fx-text-fill: #000000; /* #ffffff #000000 Более темный черный цвет текста */
+    -fx-font-weight: bold; /* Жирный текст */
+}
+.table-row-cell:odd {
+    -fx-background-color: rgba(0, 0, 0, 0.05); /* Легкий оттенок для нечетных строк */
+}
+.table-row-cell:selected {
+    -fx-background-color: #4CAF50; /* Цвет выделения */
+    -fx-text-fill: #ffffff; /* Белый текст при выделении */
+}
+/* Настройки для текста */
+.text-field, .combo-box {
+    -fx-text-fill: #ffffff;
+    -fx-background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон */
+    -fx-background-radius: 5;
+}
+.label {
+    -fx-text-fill: white; /* Белый цвет текста для меток */
+}
+/* Специфический стиль только для заголовков таблицы */
+.table-view .column-header .label {
+    -fx-text-fill: black; /* Черный цвет текста для заголовков таблицы */
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.text-field {
+    -fx-text-fill: white; /* Белый цвет текста для текстовых полей */
+    -fx-background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный фон для текстовых полей */
+    -fx-background-radius: 5;
+}
+
+.button {
+    /*-fx-background-color: lightblue; !* Голубой цвет для кнопок *!*/
+    /*-fx-text-fill: white; !* Белый цвет текста для кнопок *!*/
+    -fx-background-radius: 5;
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+}
+
+.button:hover {
+    -fx-background-color: #4CAF50;
+}
+.tab:selected {
+    -fx-background-color: lightgreen; /* Зеленый цвет для выбранной вкладки */
+}
+
+.table-view .cell {
+    -fx-text-fill: white; /* Цвет текста */
+}
+/* Стиль для всего ComboBox */
+.combo-box {
+    -fx-background-color: white; /* Фон ComboBox */
+    -fx-border-color: white; /* Обводка ComboBox */
+    -fx-text-fill: white; /* Цвет текста в ComboBox */
+}
+
+/* Стиль для текста внутри ComboBox */
+.combo-box .list-cell {
+    -fx-text-fill: white; /* Цвет текста в выпадающем списке */
+    -fx-background-color: black; /* Фон текста в выпадающем списке */
+}
+
+/* Стиль для текста, который отображается в ComboBox */
+.combo-box .text {
+    -fx-fill: white; /* Цвет текста */
+}
+
+/* Стиль для всплывающего списка */
+.combo-box-popup {
+    -fx-background-color: black; /* Фон всплывающего списка */
+}
+
+
+
+
+
+/*
+for login
+*/
+/* Стили для корня окна входа */
+.root-login {
+    -fx-background-image: url("hot3pic.jpg"); /* Укажите путь к фоновому изображению */
+    -fx-background-size: cover;
+    -fx-background-position: center;
+    -fx-background-repeat: no-repeat;
+    -fx-background-color: #1e1e2e; /* Фоновый цвет, если изображение отсутствует */
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0.5, 0, 0);
+}
+
+/* Стили для меток в окне входа */
+.label-login {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+/* Стили для кнопок в окне входа */
+.button-login {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-background-radius: 10;
+    -fx-padding: 10;
+    -fx-font-size: 14px;
+}
+.button-login:hover {
+    -fx-background-color: #4CAF50;
+}
+
+/* Стили для текстовых полей в окне входа */
+.text-field-login, .password-field-login {
+    -fx-text-fill: white;
+    -fx-background-color: rgba(0, 0, 0, 0.7);
+    -fx-background-radius: 5;
+    -fx-font-size: 14px;
+    -fx-padding: 8;
+}
