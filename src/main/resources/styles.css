@@ -166,3 +166,8 @@ for login
     -fx-font-size: 14px;
     -fx-padding: 8;
 }
+
+
+.table-row-cell.highlighted {
+    -fx-background-color: lightgreen;
+}

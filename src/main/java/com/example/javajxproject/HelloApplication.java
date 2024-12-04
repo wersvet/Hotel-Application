@@ -14,14 +14,15 @@ import javafx.stage.Stage;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.sql.Connection;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.DatePicker;
-
-
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.Instant;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 
 public class HelloApplication extends Application {
 
@@ -36,7 +37,8 @@ public class HelloApplication extends Application {
             Class.forName("org.sqlite.JDBC");
             Connection conn = DriverManager.getConnection("jdbc:sqlite:C:\\Users\\ALIMZHAN-PC\\Desktop\\OOP Java\\javajxproject_3test\\sqlforjavafxproject5.db");
             String createTableSQL = """
-        CREATE TABLE IF NOT EXISTS rooms (
+        
+                    CREATE TABLE IF NOT EXISTS rooms (
             id TEXT PRIMARY KEY,
             number TEXT,
             capacity TEXT,
@@ -62,7 +64,8 @@ public class HelloApplication extends Application {
             return null;
         }
     }
-    private boolean isIdUnique(String id) {
+    /*
+        private boolean isIdUnique(String id) {
         try (Connection conn = connectDatabase();
              PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM rooms WHERE id = ?")) {
             pstmt.setString(1, id);
@@ -75,7 +78,7 @@ public class HelloApplication extends Application {
         }
         return false;
     }
-
+    * */
     private void addRoomToDatabase(String id, String number, String capacity, double price, String roomType,
                                    Integer minStay, Integer maxStay, String roomStatus, LocalDate arrivalDate, LocalDate departureDate) {
         if (id == null || id.isEmpty()) {
@@ -187,11 +190,11 @@ public class HelloApplication extends Application {
         homeVBox.getStyleClass().add("root-login"); // Применяем стиль фона
 
         Button adminLoginButton = new Button("Admin Login");
-        adminLoginButton.getStyleClass().add("button-login"); // Применяем стиль кнопки
+        adminLoginButton.getStyleClass().add("button-login"); // Применяем стиль кнопки 1
         adminLoginButton.setOnAction(e -> showAdminLoginWindow(primaryStage));
 
         Button customerLoginButton = new Button("Customer Login");
-        customerLoginButton.getStyleClass().add("button-login"); // Применяем стиль кнопки
+        customerLoginButton.getStyleClass().add("button-login"); // Применяем стиль кнопки 2
         customerLoginButton.setOnAction(e -> showCustomerLoginWindow(primaryStage));
 
         homeVBox.getChildren().addAll(adminLoginButton, customerLoginButton);
@@ -290,7 +293,7 @@ public class HelloApplication extends Application {
     private void showBookingWindow(Stage primaryStage, String currentUserLogin) {
         TableView<Room> bookingTableView = new TableView<>();
 
-        // Убираем столбцы ID, Мин. прибывание и Макс. прибывание
+        // Убираем столбцы ID, Мин. Прибывание и Макс. Прибывание
         TableColumn<Room, String> numberColumn = new TableColumn<>("Номер");
         numberColumn.setCellValueFactory(cellData -> cellData.getValue().numberProperty());
 
@@ -715,6 +718,13 @@ public class HelloApplication extends Application {
         viewRoomsTab.setClosable(false);
         tabPane.getTabs().addAll(addRoomTab, viewRoomsTab);
 
+
+        // Добавление новой вкладки без дублирования переменной
+        Tab userInfoTab = new Tab("Информация о пользователях", createUserInfoVBox());
+        userInfoTab.setClosable(false);
+// Добавляем вкладку в существующий TabPane
+        tabPane.getTabs().add(userInfoTab);
+
         // Создаем корневой элемент с фоновым изображением
         StackPane root = new StackPane(tabPane);
         root.getStyleClass().add("root");
@@ -726,6 +736,120 @@ public class HelloApplication extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
+
+
+    private VBox createUserInfoVBox() {
+        TableView<UserInfo> userInfoTableView = new TableView<>();
+
+        TableColumn<UserInfo, String> loginColumn = new TableColumn<>("Логин");
+        loginColumn.setCellValueFactory(cellData -> cellData.getValue().loginProperty());
+        TableColumn<UserInfo, String> passwordColumn = new TableColumn<>("Пароль");
+        passwordColumn.setCellValueFactory(cellData -> cellData.getValue().passwordProperty());
+        TableColumn<UserInfo, String> numberColumn = new TableColumn<>("Номер телефона");
+        numberColumn.setCellValueFactory(cellData -> cellData.getValue().numberProperty());
+        TableColumn<UserInfo, String> fioColumn = new TableColumn<>("ФИО");
+        fioColumn.setCellValueFactory(cellData -> cellData.getValue().fioProperty());
+        TableColumn<UserInfo, String> roomNumberColumn = new TableColumn<>("Номер комнаты");
+        roomNumberColumn.setCellValueFactory(cellData -> cellData.getValue().roomNumberProperty());
+        TableColumn<UserInfo, LocalDate> arrivalDateColumn = new TableColumn<>("Дата приезда");
+        arrivalDateColumn.setCellValueFactory(cellData -> cellData.getValue().arrivalDateProperty());
+        TableColumn<UserInfo, LocalDate> departureDateColumn = new TableColumn<>("Дата отъезда");
+        departureDateColumn.setCellValueFactory(cellData -> cellData.getValue().departureDateProperty());
+        TableColumn<UserInfo, String> totalAmountColumn = new TableColumn<>("Итоговая сумма");
+        totalAmountColumn.setCellValueFactory(cellData -> cellData.getValue().totalAmountProperty());
+
+        userInfoTableView.getColumns().addAll(loginColumn, passwordColumn, numberColumn, fioColumn, roomNumberColumn, arrivalDateColumn, departureDateColumn, totalAmountColumn);
+        userInfoTableView.getStyleClass().add("table-view");
+        userInfoTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Загрузка данных из базы
+        loadUserInfoFromDatabase(userInfoTableView);
+
+        // Установка RowFactory для подсветки строк
+        userInfoTableView.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(UserInfo item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setStyle("");
+                } else if (item.isHighlighted()) {
+                    setStyle("-fx-background-color: lightgreen;");
+                } else {
+                    setStyle("");
+                }
+            }
+        });
+
+        // Поле поиска и кнопка
+        TextField searchField = new TextField();
+        searchField.setPromptText("Введите данные для поиска");
+
+        Button searchButton = new Button("Найти");
+        searchButton.getStyleClass().add("button");
+        searchButton.setOnAction(e -> {
+            String query = searchField.getText().toLowerCase();
+            if (!query.isEmpty()) {
+                userInfoTableView.getItems().forEach(item -> {
+                    item.setHighlighted(item.matches(query));
+                });
+                userInfoTableView.refresh(); // Обновление таблицы
+            }
+        });
+
+        VBox userInfoVBox = new VBox(10, searchField, searchButton, userInfoTableView);
+        userInfoVBox.setPadding(new Insets(10));
+        VBox.setVgrow(userInfoTableView, javafx.scene.layout.Priority.ALWAYS);
+
+        return userInfoVBox;
+    }
+
+    private void loadUserInfoFromDatabase(TableView<UserInfo> tableView) {
+        tableView.getItems().clear(); // Очищаем таблицу перед загрузкой данных
+        try (Connection conn = connectDatabase();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM logins_info")) {
+
+            while (rs.next()) {
+                String login = rs.getString("login");
+                String password = rs.getString("password");
+                String number = rs.getString("number");
+                String fio = rs.getString("FIO");
+                String roomNumber = rs.getString("room_number");
+
+                LocalDate arrivalDate = null;
+                LocalDate departureDate = null;
+
+                try {
+                    // Попытка преобразовать значения в LocalDate
+                    if (rs.getLong("arrival_date") != 0) {
+                        arrivalDate = Instant.ofEpochMilli(rs.getLong("arrival_date"))
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate();
+                    }
+                    if (rs.getLong("departure_date") != 0) {
+                        departureDate = Instant.ofEpochMilli(rs.getLong("departure_date"))
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate();
+                    }
+                } catch (Exception e) {
+                    System.err.println("Ошибка преобразования даты: " + e.getMessage());
+                }
+
+                String totalAmount = rs.getString("total_amount");
+
+                // Создаем объект UserInfo
+                UserInfo userInfo = new UserInfo(
+                        login, password, number, fio, roomNumber, arrivalDate, departureDate, totalAmount
+                );
+
+                // Добавляем объект в таблицу
+                tableView.getItems().add(userInfo);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Обрабатываем SQL-исключение
+        }
+    }
+
 
     private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -844,6 +968,82 @@ public class HelloApplication extends Application {
 
         public SimpleObjectProperty<LocalDate> departureDateProperty() {
             return departureDate;
+        }
+    }
+
+    public static class UserInfo {
+        private final SimpleStringProperty login;
+        private final SimpleStringProperty password;
+        private final SimpleStringProperty number;
+        private final SimpleStringProperty fio;
+        private final SimpleStringProperty roomNumber;
+        private final SimpleObjectProperty<LocalDate> arrivalDate;
+        private final SimpleObjectProperty<LocalDate> departureDate;
+        private final SimpleStringProperty totalAmount;
+        private boolean highlighted; // Флаг подсветки строки
+
+        public UserInfo(String login, String password, String number, String fio, String roomNumber, LocalDate arrivalDate, LocalDate departureDate, String totalAmount) {
+            this.login = new SimpleStringProperty(login);
+            this.password = new SimpleStringProperty(password);
+            this.number = new SimpleStringProperty(number);
+            this.fio = new SimpleStringProperty(fio);
+            this.roomNumber = new SimpleStringProperty(roomNumber);
+            this.arrivalDate = new SimpleObjectProperty<>(arrivalDate);
+            this.departureDate = new SimpleObjectProperty<>(departureDate);
+            this.totalAmount = new SimpleStringProperty(totalAmount);
+            this.highlighted = false; // По умолчанию строка не подсвечивается
+        }
+
+        // Методы matches и подсветки
+        public boolean matches(String query) {
+            query = query.toLowerCase();
+            return login.get().toLowerCase().contains(query) ||
+                    password.get().toLowerCase().contains(query) ||
+                    number.get().toLowerCase().contains(query) ||
+                    fio.get().toLowerCase().contains(query) ||
+                    roomNumber.get().toLowerCase().contains(query) ||
+                    totalAmount.get().toLowerCase().contains(query);
+        }
+
+        public boolean isHighlighted() {
+            return highlighted;
+        }
+
+        public void setHighlighted(boolean highlighted) {
+            this.highlighted = highlighted;
+        }
+
+        // Геттеры для всех свойств
+        public SimpleStringProperty loginProperty() {
+            return login;
+        }
+
+        public SimpleStringProperty passwordProperty() {
+            return password;
+        }
+
+        public SimpleStringProperty numberProperty() {
+            return number;
+        }
+
+        public SimpleStringProperty fioProperty() {
+            return fio;
+        }
+
+        public SimpleStringProperty roomNumberProperty() {
+            return roomNumber;
+        }
+
+        public SimpleObjectProperty<LocalDate> arrivalDateProperty() {
+            return arrivalDate;
+        }
+
+        public SimpleObjectProperty<LocalDate> departureDateProperty() {
+            return departureDate;
+        }
+
+        public SimpleStringProperty totalAmountProperty() {
+            return totalAmount;
         }
     }
 }
