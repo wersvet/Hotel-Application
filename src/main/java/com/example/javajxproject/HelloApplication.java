@@ -291,9 +291,9 @@ public class HelloApplication extends Application {
         primaryStage.setScene(customerLoginScene);
     }
     private void showBookingWindow(Stage primaryStage, String currentUserLogin) {
+        // Создание таблицы для "Бронирование номера"
         TableView<Room> bookingTableView = new TableView<>();
 
-        // Убираем столбцы ID, Мин. Прибывание и Макс. Прибывание
         TableColumn<Room, String> numberColumn = new TableColumn<>("Номер");
         numberColumn.setCellValueFactory(cellData -> cellData.getValue().numberProperty());
 
@@ -307,13 +307,11 @@ public class HelloApplication extends Application {
         typeColumn.setCellValueFactory(cellData -> cellData.getValue().roomTypeProperty());
 
         bookingTableView.getColumns().addAll(numberColumn, capacityColumn, priceColumn, typeColumn);
-
-        // Стили для таблицы
         bookingTableView.getStyleClass().add("table-view");
         bookingTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         VBox.setVgrow(bookingTableView, javafx.scene.layout.Priority.ALWAYS);
 
-        // Загрузка только свободных номеров
+        // Загрузка данных о свободных номерах
         try (Connection conn = connectDatabase();
              PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM rooms WHERE room_status = 'Свободно'")) {
             ResultSet rs = pstmt.executeQuery();
@@ -362,7 +360,7 @@ public class HelloApplication extends Application {
         Button bookButton = new Button("Забронировать");
         bookButton.getStyleClass().add("button");
         bookButton.setOnAction(e -> {
-            String selectedRoom = roomComboBox.getValue(); // Получаем выбранный номер
+            String selectedRoom = roomComboBox.getValue();
             LocalDate arrivalDate = arrivalDatePicker.getValue();
             LocalDate departureDate = departureDatePicker.getValue();
 
@@ -378,13 +376,13 @@ public class HelloApplication extends Application {
             }
 
             try (Connection conn = connectDatabase()) {
-                conn.setAutoCommit(false); // Отключаем автокоммит для транзакции
+                conn.setAutoCommit(false);
 
                 // Обновляем таблицу rooms
                 String updateRoomSQL = """
             UPDATE rooms SET room_status = 'Занято', ID = ?, arrival_date = ?, departure_date = ? 
             WHERE number = ?
-        """;
+            """;
                 try (PreparedStatement pstmt1 = conn.prepareStatement(updateRoomSQL)) {
                     pstmt1.setString(1, currentUserLogin);
                     pstmt1.setDate(2, Date.valueOf(arrivalDate));
@@ -405,7 +403,7 @@ public class HelloApplication extends Application {
                 String updateUserSQL = """
             UPDATE logins_info SET room_number = ?, arrival_date = ?, departure_date = ?, total_amount = ? 
             WHERE login = ?
-        """;
+            """;
                 try (PreparedStatement pstmt2 = conn.prepareStatement(updateUserSQL)) {
                     pstmt2.setString(1, selectedRoom);
                     pstmt2.setDate(2, Date.valueOf(arrivalDate));
@@ -415,9 +413,9 @@ public class HelloApplication extends Application {
                     pstmt2.executeUpdate();
                 }
 
-                conn.commit(); // Подтверждаем транзакцию
+                conn.commit();
                 showAlert("Успех", "Бронирование успешно завершено!");
-                bookingTableView.getItems().removeIf(room -> room.getNumber().equals(selectedRoom)); // Убираем забронированную комнату из таблицы
+                bookingTableView.getItems().removeIf(room -> room.getNumber().equals(selectedRoom));
             } catch (SQLException ex) {
                 ex.printStackTrace();
                 showAlert("Ошибка", "Произошла ошибка при бронировании.");
@@ -426,12 +424,65 @@ public class HelloApplication extends Application {
 
         VBox bookingVBox = new VBox(10, bookingTableView, roomComboBox, arrivalDatePicker, departureDatePicker, bookButton);
         bookingVBox.setPadding(new Insets(10));
-        bookingVBox.getStyleClass().add("root"); // Фон из CSS
+        bookingVBox.getStyleClass().add("root");
 
-        Scene bookingScene = new Scene(bookingVBox, 1024, 768);
-        bookingScene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        primaryStage.setScene(bookingScene);
+        Tab bookingTab = new Tab("Бронирование номера", bookingVBox);
+        bookingTab.setClosable(false);
+
+        // Создание вкладки "Личный кабинет"
+        VBox personalAccountVBox = createPersonalAccountVBox(currentUserLogin);
+        Tab personalAccountTab = new Tab("Личный кабинет", personalAccountVBox);
+        personalAccountTab.setClosable(false);
+
+        TabPane tabPane = new TabPane(bookingTab, personalAccountTab);
+
+        Scene scene = new Scene(tabPane, 1024, 768);
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private VBox createPersonalAccountVBox(String currentUserLogin) {
+        VBox personalInfoVBox = new VBox(10);
+        personalInfoVBox.setPadding(new Insets(10));
+        personalInfoVBox.getStyleClass().add("root");
+
+        Label loginLabel = new Label();
+        Label passwordLabel = new Label();
+        Label phoneNumberLabel = new Label();
+        Label fioLabel = new Label();
+        Label roomNumberLabel = new Label();
+        Label arrivalDateLabel = new Label();
+        Label departureDateLabel = new Label();
+        Label totalAmountLabel = new Label();
+
+        try (Connection conn = connectDatabase();
+             PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM logins_info WHERE login = ?")) {
+            pstmt.setString(1, currentUserLogin);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                loginLabel.setText("Логин: " + rs.getString("login"));
+                passwordLabel.setText("Пароль: " + rs.getString("password"));
+                phoneNumberLabel.setText("Номер телефона: " + rs.getString("number"));
+                fioLabel.setText("ФИО: " + rs.getString("FIO"));
+                roomNumberLabel.setText("Номер комнаты: " + rs.getString("room_number"));
+                arrivalDateLabel.setText("Дата приезда: " + rs.getString("arrival_date"));
+                departureDateLabel.setText("Дата отъезда: " + rs.getString("departure_date"));
+                totalAmountLabel.setText("Итоговая сумма: " + rs.getString("total_amount"));
+            } else {
+                loginLabel.setText("Пользователь не найден.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        personalInfoVBox.getChildren().addAll(
+                loginLabel, passwordLabel, phoneNumberLabel, fioLabel,
+                roomNumberLabel, arrivalDateLabel, departureDateLabel, totalAmountLabel
+        );
+
+        return personalInfoVBox;
     }
 
 
@@ -849,6 +900,11 @@ public class HelloApplication extends Application {
             e.printStackTrace(); // Обрабатываем SQL-исключение
         }
     }
+
+
+
+
+
 
 
     private void showAlert(String title, String message) {
